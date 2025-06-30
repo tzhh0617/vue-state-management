@@ -47,10 +47,32 @@
     
     <!-- 确认表单 -->
     <div class="confirmation-form">
-      <el-form :model="formData" :rules="validationRules" label-width="80px">
-        <el-form-item label="确认信息" prop="confirmed">
+      <el-form 
+        ref="formRef"
+        :model="step4.formData" 
+        label-width="80px"
+        @submit.prevent
+      >
+        <el-form-item 
+          label="确认信息" 
+          prop="confirmed"
+          :rules="[
+            { 
+              required: true, 
+              message: '请确认信息无误', 
+              trigger: 'change',
+              validator: (rule, value, callback) => {
+                if (value === true) {
+                  callback()
+                } else {
+                  callback(new Error('请确认信息无误'))
+                }
+              }
+            }
+          ]"
+        >
           <el-checkbox 
-            v-model="formData.confirmed" 
+            v-model="step4.formData.confirmed" 
             @change="handleValidation"
             size="large"
           >
@@ -60,7 +82,7 @@
         
         <el-form-item label="备注信息">
           <el-input
-            v-model="formData.notes"
+            v-model="step4.formData.notes"
             type="textarea"
             :rows="3"
             placeholder="可选：添加额外的备注信息..."
@@ -90,12 +112,10 @@
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue'
+
 const props = defineProps({
-  formData: {
-    type: Object,
-    required: true
-  },
-  validationRules: {
+  step4: {
     type: Object,
     required: true
   },
@@ -103,11 +123,15 @@ const props = defineProps({
     type: Object,
     required: true
   },
-  baseOptions: {
+  step1: {
     type: Object,
     required: true
   },
-  dynamicOptions: {
+  step2: {
+    type: Object,
+    required: true
+  },
+  step3: {
     type: Object,
     required: true
   }
@@ -115,28 +139,37 @@ const props = defineProps({
 
 const emit = defineEmits(['validate'])
 
+const formRef = ref(null)
+
+// 将form引用注册到step4 hook中
+onMounted(() => {
+  if (props.step4?.setFormRef && formRef.value) {
+    props.step4.setFormRef(formRef.value)
+  }
+})
+
 const handleValidation = () => {
   emit('validate')
 }
 
 // 辅助方法：获取标签文本
 const getTypeLabel = (value) => {
-  const option = props.baseOptions.types.find(item => item.value === value)
+  const option = props.step1.baseOptions.types.find(item => item.value === value)
   return option ? option.label : value
 }
 
 const getCategoryLabel = (value) => {
-  const option = props.dynamicOptions.categories.find(item => item.value === value)
+  const option = props.step1.dynamicOptions.categories.find(item => item.value === value)
   return option ? option.label : value
 }
 
 const getTagLabel = (value) => {
-  const option = props.dynamicOptions.tags.find(item => item.value === value)
+  const option = props.step2.dynamicOptions.tags.find(item => item.value === value)
   return option ? option.label : value
 }
 
 const getPriorityLabel = (value) => {
-  const option = props.baseOptions.priorities.find(item => item.value === value)
+  const option = props.step2.baseOptions.priorities.find(item => item.value === value)
   return option ? option.label : value
 }
 
@@ -150,7 +183,7 @@ const getPriorityType = (value) => {
 }
 
 const getAssigneeLabel = (value) => {
-  const option = props.dynamicOptions.assignees.find(item => item.value === value)
+  const option = props.step3.dynamicOptions.assignees.find(item => item.value === value)
   return option ? option.label : value
 }
 

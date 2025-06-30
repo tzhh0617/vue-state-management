@@ -176,6 +176,24 @@ export function useMultiStepForm() {
   // 动态选项数据（根据前一步的选择变化）
   const dynamicOptions = reactive(createInitialDynamicOptions())
   
+  // 各步骤的表单引用
+  const formRefs = reactive({
+    step1: null,
+    step2: null,
+    step3: null,
+    step4: null
+  })
+  
+  // 设置表单引用
+  const setFormRef = (stepKey, formRef) => {
+    formRefs[stepKey] = formRef
+  }
+  
+  // 获取表单引用
+  const getFormRef = (stepKey) => {
+    return formRefs[stepKey]
+  }
+  
   // 工具函数：更新动态选项
   const updateCategoriesOptions = (type) => {
     dynamicOptions.categories = DYNAMIC_OPTIONS_CONFIG.categories[type] || []
@@ -235,41 +253,56 @@ export function useMultiStepForm() {
     resetDynamicOptions()
   }
   
-  const validateCurrentStep = () => {
+  const validateCurrentStep = async () => {
     const currentStepKey = `step${currentStep.value}`
-    const currentFormData = formData[currentStepKey]
-    const currentRules = validationRules[currentStepKey]
+    const formRef = formRefs[currentStepKey]
     
-    let isValid = true
-    
-    for (const field in currentRules) {
-      const value = currentFormData[field]
-      const rules = currentRules[field]
+    if (formRef) {
+      // 使用Element Plus的form validation
+      try {
+        await formRef.validate()
+        stepValidation[currentStepKey] = true
+        return true
+      } catch (error) {
+        stepValidation[currentStepKey] = false
+        return false
+      }
+    } else {
+      // 如果没有form引用，则回退到原来的手动验证逻辑
+      const currentFormData = formData[currentStepKey]
+      const currentRules = validationRules[currentStepKey]
       
-      for (const rule of rules) {
-        if (rule.required && (!value || (Array.isArray(value) && value.length === 0) || value === false)) {
-          isValid = false
-          break
+      let isValid = true
+      
+      for (const field in currentRules) {
+        const value = currentFormData[field]
+        const rules = currentRules[field]
+        
+        for (const rule of rules) {
+          if (rule.required && (!value || (Array.isArray(value) && value.length === 0) || value === false)) {
+            isValid = false
+            break
+          }
+          if (rule.min && typeof value === 'string' && value.length < rule.min) {
+            isValid = false
+            break
+          }
+          if (rule.max && typeof value === 'string' && value.length > rule.max) {
+            isValid = false
+            break
+          }
         }
-        if (rule.min && typeof value === 'string' && value.length < rule.min) {
-          isValid = false
-          break
-        }
-        if (rule.max && typeof value === 'string' && value.length > rule.max) {
-          isValid = false
-          break
-        }
+        
+        if (!isValid) break
       }
       
-      if (!isValid) break
+      stepValidation[currentStepKey] = isValid
+      return isValid
     }
-    
-    stepValidation[currentStepKey] = isValid
-    return isValid
   }
   
-  const nextStep = () => {
-    if (validateCurrentStep() && currentStep.value < totalSteps) {
+  const nextStep = async () => {
+    if (await validateCurrentStep() && currentStep.value < totalSteps) {
       currentStep.value++
     }
   }
@@ -287,7 +320,7 @@ export function useMultiStepForm() {
   }
   
   const submitForm = async () => {
-    if (!validateCurrentStep()) {
+    if (!await validateCurrentStep()) {
       ElMessage.warning('请先完成当前步骤的信息填写')
       return false
     }
@@ -341,6 +374,7 @@ export function useMultiStepForm() {
     stepValidation,
     dynamicOptions,
     baseOptions: BASE_OPTIONS,
+    formRefs,
     
     // 计算属性
     isFirstStep,
@@ -360,6 +394,8 @@ export function useMultiStepForm() {
     nextStep,
     prevStep,
     goToStep,
-    submitForm
+    submitForm,
+    setFormRef,
+    getFormRef
   }
 }

@@ -26,40 +26,32 @@
       <!-- 第一步：基本信息 -->
       <Step1BasicInfo
         v-show="currentStep === 1"
-        :form-data="formData.step1"
-        :validation-rules="validationRules.step1"
-        :base-options="baseOptions"
-        :dynamic-options="dynamicOptions"
+        :step1="step1"
         @validate="validateCurrentStep"
       />
 
       <!-- 第二步：详细设置 -->
       <Step2DetailedSettings
         v-show="currentStep === 2"
-        :form-data="formData.step2"
-        :validation-rules="validationRules.step2"
-        :base-options="baseOptions"
-        :dynamic-options="dynamicOptions"
+        :step2="step2"
         @validate="validateCurrentStep"
       />
 
       <!-- 第三步：分配确认 -->
       <Step3Assignment
         v-show="currentStep === 3"
-        :form-data="formData.step3"
-        :validation-rules="validationRules.step3"
-        :dynamic-options="dynamicOptions"
+        :step3="step3"
         @validate="validateCurrentStep"
       />
 
       <!-- 第四步：最终确认 -->
       <Step4Confirmation
         v-show="currentStep === 4"
-        :form-data="formData.step4"
-        :validation-rules="validationRules.step4"
-        :all-form-data="formData"
-        :base-options="baseOptions"
-        :dynamic-options="dynamicOptions"
+        :step4="step4"
+        :all-form-data="{ step1: step1.formData, step2: step2.formData, step3: step3.formData }"
+        :step1="step1"
+        :step2="step2"
+        :step3="step3"
         @validate="validateCurrentStep"
       />
     </div>
@@ -91,7 +83,7 @@
 </template>
 
 <script setup>
-import { useMultiStepForm } from '../composables/useMultiStepForm.js'
+import { useMultiStepFormNew } from '../composables/useMultiStepFormNew.js'
 import {
   Step1BasicInfo,
   Step2DetailedSettings,
@@ -103,24 +95,21 @@ const {
   dialogVisible,
   currentStep,
   totalSteps,
-  formData,
-  validationRules,
-  stepValidation,
-  dynamicOptions,
-  baseOptions,
+  step1,
+  step2,
+  step3,
+  step4,
   isFirstStep,
   isLastStep,
   canGoNext,
   progressPercentage,
   openDialog,
   closeDialog,
-  resetForm,
   validateCurrentStep,
   nextStep,
   prevStep,
-  goToStep,
   submitForm
-} = useMultiStepForm()
+} = useMultiStepFormNew()
 
 // 暴露方法给父组件
 defineExpose({
